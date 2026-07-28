@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How long has it been since Pete Ricketts held a town hall?</title>
+  <meta name="description" content="It has been 459 days since Senator Pete Ricketts held an in-person town hall in Nebraska.">
+
+  <meta property="og:title" content="Days since Pete Ricketts held a town hall">
+  <meta property="og:description" content="Nebraska has 93 counties. Pete Ricketts has not held an in-person town hall in any of them since April 25, 2025.">
+  <meta property="og:type" content="website">
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin="" />
+  <link rel="stylesheet" href="nebraska-map.css" />
+
+  <style>
+    /* The page is black end to end. Type stacks are the O4S brand faces
+       from nebraska-map.css, repeated here rather than pulled from the
+       component's custom properties — those are scoped to .nebraska-map
+       and deliberately don't leak into a host page. On osbornforsenate.com
+       these resolve through the site's Typekit; off that domain (here)
+       the fallbacks stand in, which is why each stack ends in a condensed
+       or humanist system face rather than bare sans-serif. */
+    :root {
+      --black: #000000;
+      --red: #b81f2e;
+      --gray: #e2e2e2;
+      --dim: #8f8f8f;
+
+      --font-heading: "alternate-gothic-compressed-atf", "Oswald",
+                      "Arial Narrow", "Helvetica Neue Condensed", sans-serif;
+      --font-label: "industry", "Roboto Condensed", "Arial Narrow", sans-serif;
+      --font-body: "din-2014", "Helvetica Neue", Arial, sans-serif;
+
+      /* One content column for every section, matching the host site's
+         own: min(1200px, 92vw), tightening to 88vw below its 749px
+         breakpoint. */
+      --col: min(1200px, 92vw);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      margin: 0;
+      background: var(--black);
+      color: #ffffff;
+      font-family: var(--font-body);
+      /* The counter is the loudest thing on the page; nothing else
+         should compete, so body copy stays quiet and generously led. */
+      line-height: 1.5;
+    }
+
+    .wrap {
+      width: var(--col);
+      margin-inline: auto;
+    }
+
+    /* ---- The counter ------------------------------------------------
+       The whole point of the page. The number is set in the compressed
+       gothic at the largest size the viewport will carry, with the
+       leading pulled in tight (.82) so a four-digit number and the word
+       under it read as one block rather than two lines of text. */
+    .hero {
+      padding: clamp(3rem, 9vh, 6.5rem) 0 clamp(2.5rem, 7vh, 5rem);
+      text-align: center;
+    }
+
+    .eyebrow {
+      font-family: var(--font-label);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-size: clamp(0.7rem, 1.6vw, 0.9rem);
+      color: var(--red);
+      margin-bottom: clamp(1rem, 3vh, 2rem);
+    }
+
+    .count {
+      font-family: var(--font-heading);
+      font-weight: 800;
+      text-transform: uppercase;
+      /* Caps at 22rem so the number doesn't grow past the column on an
+         ultrawide monitor; the vw term is what carries it on a phone. */
+      font-size: clamp(5.5rem, 24vw, 22rem);
+      line-height: 0.82;
+      letter-spacing: -0.01em;
+      margin: 0;
+      /* Tabular figures so the number doesn't reflow when it ticks over
+         to a new digit width, and so it can't shift between fallback
+         faces mid-render. */
+      font-variant-numeric: tabular-nums;
+    }
+
+    .count-unit {
+      display: block;
+      font-size: 0.42em;
+      letter-spacing: 0.02em;
+      color: var(--red);
+    }
+
+    .statement {
+      font-family: var(--font-heading);
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: clamp(1.5rem, 5vw, 3.25rem);
+      line-height: 0.9;
+      letter-spacing: 0.005em;
+      max-width: 20ch;
+      margin: clamp(1.5rem, 4vh, 2.75rem) auto 0;
+    }
+
+    .since {
+      font-family: var(--font-label);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: clamp(0.72rem, 1.8vw, 0.95rem);
+      color: var(--dim);
+      margin: clamp(1.25rem, 3vh, 2rem) auto 0;
+      max-width: 44ch;
+      line-height: 1.7;
+    }
+
+    /* ---- The map ----------------------------------------------------
+       Deliberately carrying no event source: every one of Nebraska's 93
+       counties renders in the component's "no event here" gray. The
+       emptiness is the argument, so there is nothing to click and no
+       legend — see the note in the boot script below. */
+    .map-section {
+      padding: 0 0 clamp(3rem, 8vh, 5.5rem);
+    }
+
+    .map-heading {
+      font-family: var(--font-heading);
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: clamp(1.15rem, 3.2vw, 2rem);
+      line-height: 0.9;
+      letter-spacing: 0.01em;
+      margin: 0 0 0.35em;
+      text-align: center;
+    }
+
+    .map-sub {
+      font-family: var(--font-label);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: clamp(0.68rem, 1.6vw, 0.85rem);
+      color: var(--dim);
+      text-align: center;
+      margin: 0 0 clamp(1.25rem, 3.5vh, 2.25rem);
+    }
+
+    /* Sized by aspect ratio, never a fixed height, so the map keeps its
+       landscape shape at every width and can't outgrow a short window.
+       height:auto overrides the component's own height:100%. */
+    #map {
+      aspect-ratio: 2.2;
+      max-height: min(560px, 70vh);
+      min-height: 200px;
+      width: 100%;
+      height: auto;
+    }
+
+    /* The component's legend explains "Event held / Upcoming". With no
+       event source there is neither, so a legend here would label two
+       colors that never appear. Hidden rather than deleted from the
+       library, so nebraska-map.js stays a verbatim copy of the one in
+       websiteMap/ and can be re-copied when that changes. */
+    #map .nm-legend { display: none; }
+
+    /* The dark theme gives the map a WHITE plate, on the reasoning that
+       a 93-polygon choropleth needs a light ground however the chrome is
+       styled. That reasoning is about telling maroon, accent-red and
+       gray apart — and this map has no maroon and no accent-red in it,
+       because it has no events. With one fill and no data to read, the
+       plate is just a white slab in the middle of a black page, so it
+       goes black and the counties sit straight on it: #e2e2e2 on black
+       is a stronger read than #e2e2e2 on white ever was.
+       Overridden here, in the host page, rather than in the library —
+       the white plate is right for every other use of this component. */
+    #map {
+      --theme-map-bg: var(--black);
+      --theme-edge: var(--red);
+    }
+
+    /* Same override, one level down. The library re-pins the controls
+       drawn ON the map to the light tokens, precisely because the plate
+       underneath them is white in both themes. This plate isn't, so that
+       carve-out would put white boxes on black; they go back to the dark
+       set. Specificity has to beat `.nebraska-map.nm-theme-dark .x`
+       (0,3,0), hence the id plus the theme class. */
+    #map.nm-theme-dark .leaflet-control-zoom a,
+    #map.nm-theme-dark .leaflet-control-attribution {
+      --theme-surface: transparent;
+      --theme-ink: #ffffff;
+      --theme-edge: rgba(255, 255, 255, 0.4);
+      --theme-accent-text: #ffffff;
+      background: rgba(0, 0, 0, 0.7);
+      color: var(--dim);
+    }
+
+    #map.nm-theme-dark .leaflet-control-attribution a { color: var(--gray); }
+    #map.nm-theme-dark .leaflet-control-zoom a { color: #ffffff; }
+
+    /* ---- Footer -----------------------------------------------------
+       Attribution carried over from osbornforsenate.com: the paid-for
+       line, the Navy rank disclaimer, the mailing address and the
+       copyright, in the site's own order and wording. */
+    .footer {
+      border-top: 2px solid var(--red);
+      padding: clamp(2.5rem, 7vh, 4rem) 0 clamp(3rem, 8vh, 4.5rem);
+      text-align: center;
+    }
+
+    .footer-mark {
+      font-family: var(--font-heading);
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: clamp(1.5rem, 4.5vw, 2.5rem);
+      line-height: 0.9;
+      letter-spacing: 0.01em;
+      margin: 0 0 0.6em;
+    }
+
+    .footer-mark a {
+      color: #ffffff;
+      text-decoration: none;
+      border-bottom: 2px solid var(--red);
+      padding-bottom: 0.06em;
+    }
+
+    .footer-mark a:hover,
+    .footer-mark a:focus-visible {
+      color: var(--red);
+    }
+
+    .paid-for {
+      font-family: var(--font-label);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: clamp(0.75rem, 1.9vw, 0.95rem);
+      margin: 0 0 1.5em;
+    }
+
+    .fine-print {
+      font-family: var(--font-label);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-size: clamp(0.6rem, 1.4vw, 0.7rem);
+      line-height: 1.9;
+      color: var(--dim);
+      max-width: 60ch;
+      margin: 0 auto;
+    }
+
+    .fine-print p { margin: 0 0 0.9em; }
+    .fine-print p:last-child { margin-bottom: 0; }
+
+    /* Below the host site's own 749px breakpoint the column tightens,
+       and the statement is given a little more room to break. */
+    @media (max-width: 749px) {
+      :root { --col: 88vw; }
+      /* Wide enough to keep "SINCE PETE RICKETTS" on one line — at 14ch
+         it broke after "PETE" and the name split across lines. */
+      .statement { max-width: 19ch; }
+    }
+
+    /* The counter animating in is decoration, not information — anyone
+       who has asked for less motion just gets the number. */
+    @media (prefers-reduced-motion: no-preference) {
+      .hero > * {
+        animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+      }
+      .count { animation-delay: 0.06s; }
+      .statement { animation-delay: 0.12s; }
+      .since { animation-delay: 0.18s; }
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(0.5rem); }
+      to   { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <main>
+    <section class="hero wrap">
+      <p class="eyebrow">Nebraska is still waiting</p>
+
+      <!-- The number is rendered server-side-ish as a static fallback so
+           the page says something true before the script runs; the boot
+           script recomputes it from the date below on every load. -->
+      <h1 class="count">
+        <span id="days">459</span>
+        <span class="count-unit">Days</span>
+      </h1>
+
+      <p class="statement">Since Pete Ricketts held a town hall</p>
+
+      <p class="since">
+        His last in-person town hall was in Scottsbluff on
+        <time datetime="2025-04-25">April&nbsp;25,&nbsp;2025</time>.
+      </p>
+    </section>
+
+    <section class="map-section wrap">
+      <h2 class="map-heading">Ninety-three counties. Not one town hall.</h2>
+      <p class="map-sub">Every county Pete Ricketts has held a town hall in since then</p>
+      <div id="map"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <p class="footer-mark">
+        <a href="https://osbornforsenate.com" rel="noopener">Osborn for Senate</a>
+      </p>
+
+      <p class="paid-for">Paid for by Osborn for Senate</p>
+
+      <div class="fine-print">
+        <p>
+          Use of military rank, unit, title, or photographs in uniform do not imply
+          endorsement by the Department of the Navy or the Department of Defense.
+        </p>
+        <p>
+          Checks can be mailed to: Osborn for Senate, 15418 Weir St #160, Omaha, NE 68137
+        </p>
+        <p>&copy;2026 Osborn for Senate. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+          crossorigin=""></script>
+  <script src="nebraska-map.js"></script>
+
+  <script>
+    // ---- The count -------------------------------------------------
+    // The one number this site exists to show. Ricketts' last in-person
+    // town hall: Scottsbluff, April 25, 2025.
+    //
+    // Both dates are floored to UTC midnight before subtracting, so the
+    // result is a whole-day difference that can't be knocked off by one
+    // by a DST boundary or by the visitor's own timezone offset. The
+    // anchor is written as Y/M/D parts rather than parsed from a string:
+    // "2025-04-25" would be read as UTC while new Date() is local, and
+    // mixing the two is exactly how a counter ends up a day out.
+    var LAST_TOWN_HALL = { year: 2025, month: 4, day: 25 };
+
+    (function () {
+      var el = document.getElementById('days');
+      if (!el) return;
+
+      var DAY_MS = 86400000;
+      var anchor = Date.UTC(
+        LAST_TOWN_HALL.year, LAST_TOWN_HALL.month - 1, LAST_TOWN_HALL.day
+      );
+      var now = new Date();
+      var today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+
+      var days = Math.floor((today - anchor) / DAY_MS);
+      if (!(days > 0)) return;  // also catches NaN, leaving the static fallback
+
+      el.textContent = days.toLocaleString('en-US');
+      document.title = days.toLocaleString('en-US') +
+        ' days since Pete Ricketts held a town hall';
+    })();
+
+    // ---- The map ---------------------------------------------------
+    // Mounted with an events file that is an empty array, so every
+    // county falls into the component's "no event" gray and none of
+    // them is a click target. That blankness is the content: the same
+    // map that shows Osborn's 93-county tour shows nothing at all here.
+    //
+    // The dark theme dissolves the component's chrome into the black
+    // page but deliberately keeps the map's own plate white — the
+    // component's counties are drawn in light-ground colors and a gray
+    // choropleth over black is unreadable however the chrome is styled.
+    var map = NebraskaMap.mount(document.getElementById('map'), {
+      eventsUrl: 'assets/events.json',
+      countiesUrl: 'assets/counties.geojson',
+      theme: 'dark'
+    });
+
+    // The map's height comes from aspect-ratio, which resolves off its
+    // width — so at mount time, before layout has settled, Leaflet can
+    // measure a container that is not yet the shape it will end up. It
+    // caches that, and the state is then framed for the wrong box: too
+    // large, off-center, running past the edges. Re-measuring and
+    // re-framing once on load is what corrects it. nmFit is attached
+    // asynchronously (it appears when the geojson resolves), so this
+    // guards on it rather than assuming it is there.
+    window.addEventListener('load', function () {
+      map.invalidateSize();
+      if (map.nmFit) map.nmFit();
+    });
+
+    // Same reasoning for resizes: a width change is a height change
+    // here, so the box has to be re-measured and re-framed every time.
+    // Coalesced to one pass per frame.
+    var pending = false;
+    window.addEventListener('resize', function () {
+      if (pending) return;
+      pending = true;
+      requestAnimationFrame(function () {
+        pending = false;
+        map.invalidateSize();
+        if (map.nmFit) map.nmFit();
+      });
+    });
+  </script>
+
+</body>
+</html>

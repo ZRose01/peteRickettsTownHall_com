@@ -1,0 +1,441 @@
+/* Nebraska events: map component + details-panel component.
+   Everything is scoped under .nebraska-map / .nebraska-map-details so the
+   components can't leak styles into (or absorb styles from) a host page.
+   The host controls each component's size — give containers explicit
+   heights. */
+
+/* Palette and type are Osborn for Senate's own, taken from the site's
+   theme tokens so the embed reads as part of the page rather than a
+   widget dropped onto it:
+     accent red   #B81F2E   maroon  #6A030F   light gray  #E2E2E2
+   The site is square-cornered throughout (its custom CSS forces
+   border-radius:0 on every control), so nothing here is rounded.
+
+   Fonts are named, not inherited, because the site's heading face is a
+   compressed gothic and its body face is not — inheriting would give
+   headings the body font. On osbornforsenate.com these resolve through
+   the page's own Typekit; everywhere else (the dev pages, a preview)
+   the fallbacks stand in, which is why each stack ends in a condensed
+   or humanist system face rather than bare sans-serif. */
+.nebraska-map,
+.nebraska-map-details,
+.nebraska-map-tour {
+  --theme-red: #b81f2e;       /* brand accent */
+  --theme-red-dark: #6a030f;  /* brand maroon: hover/pressed, held counties */
+  --theme-red-light: #d84a57; /* tint for hovers on dark ground */
+  --theme-gray: #e2e2e2;      /* brand light accent */
+  --theme-white: #ffffff;
+  --theme-text: #1a1a1a;      /* body text on white */
+
+  /* Themeable surface. The block is dropped between sections whose own
+     backgrounds are black and accent red, so it can't assume it sits on
+     white. These three are the only knobs the dark variant moves:
+       --theme-surface  the card behind the panel, tour list and map
+       --theme-ink      body text on that surface
+       --theme-edge     frames and rules
+     The map keeps a light surface in both themes — a choropleth needs a
+     consistent light ground, and 93 polygons over a black or red
+     section is unreadable however the chrome is styled. */
+  --theme-surface: var(--theme-white);
+  --theme-ink: var(--theme-text);
+  --theme-edge: var(--theme-red);
+  --theme-heading: var(--theme-red-dark);
+  --theme-rule: rgba(0, 0, 0, 0.1);   /* hairline between tour rows */
+  --theme-accent-text: var(--theme-red);  /* tour dates, links */
+  --theme-map-bg: transparent;        /* ground the county polygons sit on */
+
+  /* Headings: compressed gothic, heavy, uppercase, tight leading. */
+  --theme-font-heading: "alternate-gothic-compressed-atf", "Oswald",
+                        "Arial Narrow", "Helvetica Neue Condensed", sans-serif;
+  /* Small caps labels and badges. */
+  --theme-font-label: "industry", "Roboto Condensed", "Arial Narrow", sans-serif;
+  /* Body copy. No "inherit" in this list — it is only valid as a whole
+     value, and one inside a font stack invalidates the declaration. */
+  --theme-font-body: "din-2014", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Dark variant, for a section whose own background is dark — the black
+   DONATE section or the accent-red DAN'S PLAN section on either side of
+   this block. The chrome dissolves into the section (transparent
+   surfaces, white ink and rules) while the map keeps a white plate, so
+   the choropleth stays readable. White is the only accent that holds up
+   on both black and red, so the tour dates go white here and lean on
+   weight rather than color to separate from the place names. */
+.nebraska-map.nm-theme-dark,
+.nebraska-map-details.nm-theme-dark,
+.nebraska-map-tour.nm-theme-dark {
+  --theme-surface: transparent;
+  --theme-ink: #ffffff;
+  --theme-edge: #ffffff;
+  --theme-heading: #ffffff;
+  --theme-accent-text: #ffffff;
+  --theme-rule: rgba(255, 255, 255, 0.3);
+  --theme-map-bg: #ffffff;
+}
+
+/* Anything drawn on top of the map keeps the light tokens: the plate
+   under it is white in both themes, so the dark set would put white
+   text and white rules on white. The dark theme is for the block's
+   chrome — the panel, the tour list, the frames — not for controls
+   sitting on the map. */
+.nebraska-map.nm-theme-dark .nm-legend,
+.nebraska-map.nm-theme-dark .leaflet-control-zoom a,
+.nebraska-map.nm-theme-dark .leaflet-control-attribution,
+.nebraska-map.nm-theme-dark .leaflet-popup-content-wrapper {
+  --theme-surface: var(--theme-white);
+  --theme-ink: var(--theme-text);
+  --theme-edge: var(--theme-red);
+  --theme-heading: var(--theme-red-dark);
+  --theme-accent-text: var(--theme-red);
+}
+
+.nebraska-map {
+  width: 100%;
+  height: 100%;
+  /* No basemap tiles. Transparent by default so the host page's own
+     background shows through instead of Leaflet's gray; the dark theme
+     sets a white plate here instead, since 93 polygons over a black or
+     red section can't be read whatever the chrome does. */
+  background: var(--theme-map-bg);
+
+  /* Square brand-red rule around the map, flush to it: border-box keeps
+     the frame inside the size the host gave us, and the map view runs
+     right up to it (fitPadding defaults to 0 to match). The details
+     panel and tour list carry the same 2px treatment so all three read
+     as a set. No radius and no bevel shadows — the site's own controls
+     are flat and square, and a beveled widget would look imported. */
+  box-sizing: border-box;
+  padding: 0;
+  border: 2px solid var(--theme-edge);
+  overflow: hidden;
+}
+
+/* County popup: title plus one card per event. Multi-event counties can
+   get tall, so cap and scroll. */
+.nebraska-map .poi-popup {
+  width: 220px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+/* Event content (title, image, blurb) — shared by popup and details panel. */
+.nebraska-map .poi-title,
+.nebraska-map-details .poi-title,
+.nebraska-map-tour .poi-title {
+  margin: 0 0 8px;
+  /* The site's heading treatment: compressed gothic, heavy, uppercase,
+     tight leading. The face is narrow, so it carries a larger size than
+     the old setting at the same measure.
+
+     These two are !important, and nothing else here is. These titles
+     are h3s, and osbornforsenate.com's site-wide code injection carries
+     `h1, h2, h3, h4 { color: #fff !important; font-family:
+     'alternate-gothic-compressed-atf' !important }`. Without the first,
+     every title in the block renders white — invisible on a light
+     section — however specific the selector here is. The second matches
+     the face this rule already wanted, so its only effect was to strip
+     the fallback stack; taking it back keeps the headings condensed if
+     the (domain-locked) kit ever fails to load. Nothing local
+     reproduces either one — `node preview_live.js --audit` is what
+     found them. */
+  font-family: var(--theme-font-heading) !important;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 0.85;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--theme-heading) !important;
+  border-bottom: 2px solid var(--theme-edge);
+  padding-bottom: 6px;
+}
+
+.nebraska-map .poi-event,
+.nebraska-map-details .poi-event {
+  margin-top: 12px;
+}
+
+.nebraska-map .poi-event:first-of-type,
+.nebraska-map-details .poi-event:first-of-type {
+  margin-top: 0;
+}
+
+.nebraska-map .poi-subtitle,
+.nebraska-map-details .poi-subtitle {
+  margin: 0 0 6px;
+  font-family: var(--theme-font-label);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--theme-ink);
+}
+
+/* Styled as the site styles a button: solid accent, white, heavy
+   uppercase label, square. */
+.nebraska-map .poi-upcoming,
+.nebraska-map-details .poi-upcoming {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 7px;
+  font-family: var(--theme-font-label);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--theme-white);
+  background: var(--theme-red);
+  vertical-align: 1px;
+}
+
+.nebraska-map .poi-image,
+.nebraska-map-details .poi-image {
+  display: block;
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+}
+
+.nebraska-map .poi-blurb,
+.nebraska-map-details .poi-blurb {
+  margin: 8px 0 0;
+  font-family: var(--theme-font-body);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--theme-ink);
+}
+
+/* ---- Details panel ---- */
+
+.nebraska-map-details {
+  background: var(--theme-surface);
+  border: 2px solid var(--theme-edge);
+  padding: 16px;
+  overflow-y: auto;
+  font-family: var(--theme-font-body);
+}
+
+.nebraska-map-details .details-empty {
+  margin: 0;
+  font-family: var(--theme-font-label);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--theme-ink);
+  opacity: 0.55;
+}
+
+.nebraska-map-details .poi-title {
+  font-size: 28px;
+}
+
+.nebraska-map-details .poi-image {
+  height: 180px;
+}
+
+.nebraska-map-details .poi-blurb {
+  font-size: 14px;
+}
+
+/* ---- Tour dates ---- */
+
+.nebraska-map-tour {
+  background: var(--theme-surface);
+  border: 2px solid var(--theme-edge);
+  padding: 16px;
+  font-family: var(--theme-font-body);
+}
+
+.nebraska-map-tour .poi-title {
+  font-size: 26px;
+  margin-bottom: 12px;
+}
+
+.nebraska-map-tour .nm-tour-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Grid, so the dates line up in a column on wide screens and collapse
+   to a stacked block on a phone (the min() keeps the date column from
+   forcing a horizontal scroll in a narrow container). */
+.nebraska-map-tour .nm-tour-row {
+  display: grid;
+  grid-template-columns: min(140px, 35%) 1fr;
+  gap: 2px 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--theme-rule);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--theme-ink);
+}
+
+.nebraska-map-tour .nm-tour-row:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.nebraska-map-tour .nm-tour-date {
+  grid-row: span 2;
+  font-family: var(--theme-font-label);
+  font-weight: 900;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--theme-accent-text);
+}
+
+.nebraska-map-tour .nm-tour-where {
+  font-family: var(--theme-font-heading);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--theme-ink);
+}
+
+/* RSVP link on the place name. It inherits the heading treatment rather
+   than taking the accent colour outright, so a list of linked rows still
+   reads as a list of place names and not as a wall of red. The whole row
+   is the hover affordance even though only the name is the click target. */
+.nebraska-map-tour .nm-tour-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.nebraska-map-tour .nm-tour-row-linked:hover .nm-tour-link,
+.nebraska-map-tour .nm-tour-link:hover,
+.nebraska-map-tour .nm-tour-link:focus-visible {
+  color: var(--theme-accent-text);
+  text-decoration: underline;
+}
+
+/* Keyboard focus has to stay visible on its own, since the hover rule
+   above is driven by the row rather than the anchor. */
+.nebraska-map-tour .nm-tour-link:focus-visible {
+  outline: 2px solid var(--theme-accent-text);
+  outline-offset: 2px;
+}
+
+.nebraska-map-tour .nm-tour-desc {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+/* Links inside staff-written descriptions (the only markup allowed). */
+.nebraska-map-tour .nm-tour-desc a,
+.nebraska-map-details .poi-blurb a,
+.nebraska-map .poi-blurb a {
+  color: var(--theme-accent-text);
+  text-decoration: underline;
+}
+
+.nebraska-map-tour .nm-tour-desc a:hover,
+.nebraska-map-details .poi-blurb a:hover,
+.nebraska-map .poi-blurb a:hover {
+  color: var(--theme-heading);
+}
+
+.nebraska-map-tour .nm-tour-empty {
+  margin: 0;
+  font-family: var(--theme-font-label);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--theme-ink);
+  opacity: 0.55;
+}
+
+@media (max-width: 480px) {
+  .nebraska-map-tour .nm-tour-row {
+    grid-template-columns: 1fr;
+  }
+  .nebraska-map-tour .nm-tour-date { grid-row: auto; }
+}
+
+/* Legend (bottom-left map control) */
+.nebraska-map .nm-legend {
+  background: var(--theme-surface);
+  border: 2px solid var(--theme-edge);
+  padding: 6px 10px;
+  font-family: var(--theme-font-label);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--theme-ink);
+  line-height: 1;
+}
+
+.nebraska-map .nm-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin: 0 5px -2px 0;
+}
+
+/* The swatches mirror the county styles exactly: held is filled with
+   the brand maroon, upcoming is an unfilled county with an accent-red
+   outline. Keep these in step with VISITED_STYLE / UPCOMING_STYLE. */
+.nebraska-map .nm-swatch-held {
+  background: rgba(106, 3, 15, 0.85);
+  border: 1px solid #6a030f;
+}
+
+.nebraska-map .nm-swatch-upcoming {
+  background: #ffffff;
+  border: 2px solid #b81f2e;
+  margin-left: 10px;
+}
+
+/* ---- Leaflet chrome: brand red & white, square ---- */
+
+.nebraska-map .leaflet-popup-content-wrapper {
+  background: var(--theme-surface);
+  border: 2px solid var(--theme-edge);
+  border-radius: 0;
+}
+
+.nebraska-map .leaflet-popup-tip {
+  background: var(--theme-red);
+}
+
+.nebraska-map .leaflet-popup-close-button {
+  color: var(--theme-red) !important;
+  font-weight: 700;
+}
+
+.nebraska-map .leaflet-popup-close-button:hover {
+  color: var(--theme-red-dark) !important;
+}
+
+.nebraska-map .leaflet-control-zoom a {
+  background: var(--theme-surface);
+  color: var(--theme-red);
+  border-bottom-color: var(--theme-red);
+}
+
+.nebraska-map .leaflet-control-zoom a:hover {
+  background: var(--theme-red);
+  color: var(--theme-white);
+}
+
+.nebraska-map .leaflet-bar {
+  border: 2px solid var(--theme-edge);
+}
+
+/* Leaflet's own chrome — zoom buttons, credit line — is sized in rem
+   (`.leaflet-container { font-size: 0.75rem }`), so it tracks the host
+   page's root font-size: 12px against a default 16px root, 12.75px on
+   osbornforsenate.com's 17px one. That is Leaflet scaling with the page
+   it was dropped into, not the site overriding anything, and it is left
+   alone deliberately. */
+.nebraska-map .leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--theme-ink);
+}
+
+.nebraska-map .leaflet-control-attribution a {
+  color: var(--theme-red);
+}
