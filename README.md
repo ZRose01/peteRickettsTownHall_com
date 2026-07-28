@@ -36,10 +36,36 @@ re-copy, or the two drift apart.
 
 What's different is the data: `assets/events.json` is an empty array. Every one
 of Nebraska's 93 counties therefore falls into the component's "no event here"
-gray, nothing is a click target, and the map has no legend (hidden in the page's
-own CSS — the library's legend labels "Event held / Upcoming", and neither
-appears here). **The blankness is the argument**: the same component that shows
-Osborn's 93-county tour shows nothing at all on this page.
+gray, and nothing is a click target. **The blankness is the argument**: the same
+component that shows Osborn's 93-county tour shows nothing at all on this page.
+
+## The legend
+
+The library's own legend is hidden and replaced by one in `index.html`. Its
+entries are "Event held / Upcoming" — two colors that never appear here.
+
+The replacement exists to make the *absence* legible. The map is a single flat
+gray, so what a reader needs told is not what the gray means; it's that the
+other category exists and is empty. A legend naming only the color actually on
+the map would read as "this map has one category." Naming the held color and
+putting a **0** beside it is what says he has held none:
+
+```
+[maroon]  TOWN HALL HELD: 0 COUNTIES
+[gray]    NO TOWN HALL:  93 COUNTIES
+```
+
+Both counts are computed at load from `counties.geojson` and `events.json`
+rather than hardcoded, so the legend can't outlive the file it describes. Held
+counties are counted by **distinct `countyFips`**, not by number of events — two
+events in Douglas County is one county shaded, and the legend counts what the
+map draws. The markup ships the empty-file answer (0 / 93) so the legend is
+correct before the script runs and survives a failed fetch.
+
+The red on the zero is applied by script and only while the number really is
+zero, so a legend that ever reports a real count won't still be styling it as
+the punchline. The swatches mirror `VISITED_STYLE` / `UNVISITED_STYLE` in
+`nebraska-map.js` — keep them in step.
 
 Two host-page overrides on top of the component's `theme: "dark"`, both in
 `index.html` rather than in the library:

@@ -167,12 +167,73 @@
       height: auto;
     }
 
-    /* The component's legend explains "Event held / Upcoming". With no
-       event source there is neither, so a legend here would label two
-       colors that never appear. Hidden rather than deleted from the
+    /* The component's own legend reads "Event held / Upcoming" and is
+       replaced by .legend below. Hidden rather than deleted from the
        library, so nebraska-map.js stays a verbatim copy of the one in
        websiteMap/ and can be re-copied when that changes. */
     #map .nm-legend { display: none; }
+
+    /* ---- Legend ------------------------------------------------------
+       The map is a single flat gray, so the thing a reader needs told is
+       not what the gray means — it's that the OTHER category exists and
+       is empty. A legend naming only the color actually on the map would
+       read as "this map has one category"; naming the held color and
+       putting a 0 beside it is what says "he has held none." Both counts
+       are computed from the data at load, so the legend can't outlive
+       the file it describes. */
+    .legend {
+      list-style: none;
+      margin: clamp(1rem, 2.5vh, 1.5rem) 0 0;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.7rem clamp(1.5rem, 4vw, 3rem);
+      font-family: var(--font-label);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: clamp(0.65rem, 1.5vw, 0.8rem);
+      color: var(--gray);
+    }
+
+    .legend li {
+      display: flex;
+      align-items: center;
+      gap: 0.55em;
+    }
+
+    .legend-swatch {
+      width: 14px;
+      height: 14px;
+      flex: none;
+    }
+
+    /* The swatches mirror the component's county styles exactly, so the
+       key matches the map it explains. Keep in step with VISITED_STYLE
+       and UNVISITED_STYLE in nebraska-map.js: held is the maroon fill at
+       0.85 over a white hairline (a same-family stroke disappears at
+       near-solid fill), unvisited is the flat gray pair. */
+    .legend-swatch-held {
+      background: rgba(106, 3, 15, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.65);
+    }
+
+    .legend-swatch-none {
+      background: #e2e2e2;
+      border: 1px solid #c9c9c9;
+    }
+
+    .legend-count {
+      font-variant-numeric: tabular-nums;
+      color: #ffffff;
+    }
+
+    /* The zero is the whole point of the legend, so it gets the accent —
+       but only while it really is zero. The class is applied by script,
+       not baked into the markup, so a legend that ever reports a real
+       number can't still be styling it as the punchline. */
+    .legend-count.is-zero { color: var(--red); }
 
     /* The dark theme gives the map a WHITE plate, on the reasoning that
        a 93-polygon choropleth needs a light ground however the chrome is
@@ -315,6 +376,21 @@
       <h2 class="map-heading">Ninety-three counties. Not one town hall.</h2>
       <p class="map-sub">Every county Pete Ricketts has held a town hall in since then</p>
       <div id="map"></div>
+
+      <ul class="legend">
+        <!-- The label is one <span> rather than loose text around the
+             <b>: in a flex row every run of bare text becomes its own
+             anonymous item, so the row's gap landed between the number
+             and the word after it as well as after the swatch. -->
+        <li>
+          <span class="legend-swatch legend-swatch-held" aria-hidden="true"></span>
+          <span>Town hall held: <b class="legend-count is-zero" id="legend-held">0</b> counties</span>
+        </li>
+        <li>
+          <span class="legend-swatch legend-swatch-none" aria-hidden="true"></span>
+          <span>No town hall: <b class="legend-count" id="legend-none">93</b> counties</span>
+        </li>
+      </ul>
     </section>
   </main>
 
@@ -390,6 +466,45 @@
       eventsUrl: 'assets/events.json',
       countiesUrl: 'assets/counties.geojson',
       theme: 'dark'
+    });
+
+    // ---- Legend counts ---------------------------------------------
+    // Read from the same two files the map is built from, rather than
+    // hardcoded, so the legend describes the data actually on the page.
+    // Re-fetching is free: the component has already requested both, so
+    // these are served from cache.
+    //
+    // "Counties with a town hall" is counted by distinct countyFips, not
+    // by number of events — two events in Douglas County is one county
+    // shaded, and the legend counts what the map draws. The markup ships
+    // the empty-file answer (0 / 93) so the legend is right before the
+    // script runs; anything here only overwrites it.
+    Promise.all([
+      fetch('assets/counties.geojson').then(function (r) { return r.json(); }),
+      fetch('assets/events.json').then(function (r) { return r.json(); })
+    ]).then(function (results) {
+      var total = results[0].features.length;
+
+      var seen = {};
+      var held = 0;
+      results[1].forEach(function (ev) {
+        if (!ev.countyFips || seen[ev.countyFips]) return;
+        seen[ev.countyFips] = true;
+        held++;
+      });
+
+      var heldEl = document.getElementById('legend-held');
+      var noneEl = document.getElementById('legend-none');
+      if (!heldEl || !noneEl) return;
+
+      heldEl.textContent = held.toLocaleString('en-US');
+      noneEl.textContent = (total - held).toLocaleString('en-US');
+      // The accent is emphasis on an actual zero, not decoration on
+      // whatever number lands there.
+      heldEl.classList.toggle('is-zero', held === 0);
+    }).catch(function () {
+      // Leave the markup's counts standing — a failed fetch should cost
+      // the page its legend's precision, not its legend.
     });
 
     // The map's height comes from aspect-ratio, which resolves off its
