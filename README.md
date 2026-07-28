@@ -104,5 +104,19 @@ python3 -m http.server 8125
 
 ## Attribution
 
-Footer carries the paid-for line, Navy rank disclaimer, mailing address and
-copyright from osbornforsenate.com, in the site's own wording and order.
+The footer is the Osborn for Senate mark, linked to osbornforsenate.com, and the
+**paid-for disclaimer** — nothing else. `PAID FOR BY OSBORN FOR SENATE` stays
+regardless of what else changes: it is the legally required disclaimer, not
+decoration.
+
+Three blocks from the parent site's footer are deliberately **not** here:
+
+- **Navy rank disclaimer** — covers use of military rank, unit, title or
+  photographs in uniform. This page uses none. Bring it back if Osborn's service
+  record ever appears here.
+- **"Checks can be mailed to" address** — belongs with a donation ask, and this
+  page makes none. Bring it back with any fundraising block.
+- **Copyright line** — removed because the campaign's claim to one on this page
+  was not verified, and an unverified claim is worse than none. The page's
+  substance is a public fact and a Census county file. Restore it only if
+  counsel confirms it.

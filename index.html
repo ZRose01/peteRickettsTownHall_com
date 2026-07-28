@@ -301,28 +301,16 @@
       color: var(--red);
     }
 
+    /* The footer is now the mark plus this line and nothing else, so it
+       ends here — no bottom margin to push dead space under it. */
     .paid-for {
       font-family: var(--font-label);
       font-weight: 900;
       text-transform: uppercase;
       letter-spacing: 0.16em;
       font-size: clamp(0.75rem, 1.9vw, 0.95rem);
-      margin: 0 0 1.5em;
+      margin: 0;
     }
-
-    .fine-print {
-      font-family: var(--font-label);
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      font-size: clamp(0.6rem, 1.4vw, 0.7rem);
-      line-height: 1.9;
-      color: var(--dim);
-      max-width: 60ch;
-      margin: 0 auto;
-    }
-
-    .fine-print p { margin: 0 0 0.9em; }
-    .fine-print p:last-child { margin-bottom: 0; }
 
     /* Below the host site's own 749px breakpoint the column tightens,
        and the statement is given a little more room to break. */
@@ -401,17 +389,6 @@
       </p>
 
       <p class="paid-for">Paid for by Osborn for Senate</p>
-
-      <div class="fine-print">
-        <p>
-          Use of military rank, unit, title, or photographs in uniform do not imply
-          endorsement by the Department of the Navy or the Department of Defense.
-        </p>
-        <p>
-          Checks can be mailed to: Osborn for Senate, 15418 Weir St #160, Omaha, NE 68137
-        </p>
-        <p>&copy;2026 Osborn for Senate. All rights reserved.</p>
-      </div>
     </div>
   </footer>
 
