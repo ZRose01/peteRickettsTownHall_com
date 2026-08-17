@@ -4,66 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>How long has it been since Pete Ricketts held a town hall?</title>
+  <meta name="description" content="It has been 459 days since Senator Pete Ricketts held an in-person town hall in Nebraska.">
 
-  <!-- Nothing in the head carries the day count. The script has the clock
-       and rewrites document.title on load, but this is what a crawler
-       stores and what every link preview shows, and a number baked in here
-       is wrong by the next morning — it read 459 for weeks while the count
-       was past 470. Everything static is written to stay true: the anchor
-       date doesn't move, and "how long" doesn't either. -->
-  <meta name="description" content="Senator Pete Ricketts has not held an in-person town hall in Nebraska since April 25, 2025, in Scottsbluff. This page counts the days since, and keeps counting.">
-
-  <link rel="canonical" href="https://peterickettstownhall.com/">
-
-  <meta property="og:title" content="How long has it been since Pete Ricketts held a town hall?">
-  <meta property="og:description" content="Senator Pete Ricketts has not held an in-person town hall in Nebraska since April 25, 2025, in Scottsbluff. This page counts the days since, and keeps counting.">
+  <meta property="og:title" content="Days since Pete Ricketts held a town hall">
+  <meta property="og:description" content="Nebraska has 93 counties. Pete Ricketts has not held an in-person town hall in any of them since April 25, 2025.">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://peterickettstownhall.com/">
-  <meta property="og:site_name" content="peteRickettsTownHall.com">
-  <meta property="og:locale" content="en_US">
-  <meta property="og:image" content="https://peterickettstownhall.com/assets/share.png">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="How long since Pete Ricketts held an in-person town hall?">
-
-  <!-- summary_large_image is what turns a shared link into the full-width
-       card rather than a thumbnail beside the text. -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="How long has it been since Pete Ricketts held a town hall?">
-  <meta name="twitter:description" content="Senator Pete Ricketts has not held an in-person town hall in Nebraska since April 25, 2025, in Scottsbluff. This page counts the days since, and keeps counting.">
-  <meta name="twitter:image" content="https://peterickettstownhall.com/assets/share.png">
-  <meta name="twitter:image:alt" content="How long since Pete Ricketts held an in-person town hall?">
-
-  <meta name="robots" content="index, follow, max-image-preview:large">
-  <meta name="theme-color" content="#000000">
-
-  <!-- The one fact the page rests on, in a form a machine can read. Kept
-       to what the page actually asserts and can stand behind: the date, the
-       place, and that the count is measured from it. -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "peteRickettsTownHall.com",
-    "url": "https://peterickettstownhall.com/",
-    "inLanguage": "en-US",
-    "description": "A running count of the days since Senator Pete Ricketts last held an in-person town hall in Nebraska.",
-    "publisher": {
-      "@type": "Organization",
-      "name": "Osborn for Senate",
-      "url": "https://osbornforsenate.com"
-    },
-    "about": {
-      "@type": "Person",
-      "name": "Pete Ricketts",
-      "jobTitle": "United States Senator",
-      "affiliation": {
-        "@type": "Organization",
-        "name": "United States Senate"
-      }
-    }
-  }
-  </script>
 
   <style>
     /* The page is black end to end. The type stacks are the O4S brand
@@ -95,12 +40,6 @@
 
     html { -webkit-text-size-adjust: 100%; }
 
-    /* Only the horizontal axis is clipped. There is nothing to either
-       side to reach, so a sideways scrollbar would only ever mean
-       something has overrun — but the attribution deliberately sits below
-       the fold, and clipping the vertical would put it out of reach. */
-    html, body { overflow-x: hidden; }
-
     body {
       margin: 0;
       background: var(--black);
@@ -111,25 +50,6 @@
       line-height: 1.5;
     }
 
-    /* ---- The fold ---------------------------------------------------
-       The count fills the window on its own and the attribution begins
-       underneath it, so the first screen is the number and nothing else.
-       Everything in here is sized off the HEIGHT — the type is as large as
-       a window can carry rather than as large as it is wide.
-
-       dvh ahead of vh where it is understood: on mobile Safari and Chrome
-       100vh is the viewport with the URL bar RETRACTED, so a block sized
-       to it stands taller than the window it is in, and the fold lands
-       above the bottom of the screen by exactly the height of that bar.
-       dvh is the window as it actually is. */
-    main {
-      min-height: 100vh;
-      min-height: 100dvh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
     .wrap {
       width: var(--col);
       margin-inline: auto;
@@ -137,14 +57,11 @@
 
     /* ---- The counter ------------------------------------------------
        The whole point of the page. The number is set in the compressed
-       gothic at the largest size the window's HEIGHT will carry, with the
+       gothic at the largest size the viewport will carry, with the
        leading pulled in tight (.82) so a four-digit number and the word
-       under it read as one block rather than two lines of text.
-
-       main centres the block, so this padding is only here to keep it off
-       the edges when the window is too short to spare any. */
+       under it read as one block rather than two lines of text. */
     .hero {
-      padding: clamp(0.5rem, 2vh, 1.5rem) 0;
+      padding: clamp(3rem, 9vh, 6.5rem) 0 clamp(2.5rem, 7vh, 5rem);
       text-align: center;
     }
 
@@ -168,20 +85,9 @@
       font-family: var(--font-heading);
       font-weight: 800;
       text-transform: uppercase;
-      /* Height sets the size. The number and the word beneath it come to
-         about 1.45 times this, so 44vh spends roughly two thirds of the
-         window on them and leaves the rest for the three lines around
-         them — the fold ends up 95% full at most window shapes.
-
-         The vw term is not a design constraint, it is the guard against
-         the number running off the side, and it only ever engages when
-         the window is far wider than it is tall or far narrower: a digit
-         of a condensed face is about half its own size across, so a count
-         of `--digits` of them needs that much of the 88vw column. The
-         script keeps --digits in step; the 3 is what stands before it
-         runs, and the day the count reaches four figures this is what
-         stops it overrunning rather than someone having to notice. */
-      font-size: clamp(3rem, min(44vh, calc(88vw / (var(--digits, 3) * 0.5))), 30rem);
+      /* Caps at 22rem so the number doesn't grow past the column on an
+         ultrawide monitor; the vw term is what carries it on a phone. */
+      font-size: clamp(5.5rem, 24vw, 22rem);
       line-height: 0.82;
       letter-spacing: -0.01em;
       margin: 0;
@@ -280,11 +186,11 @@
       font-family: var(--font-heading);
       font-weight: 800;
       text-transform: uppercase;
-      font-size: clamp(1.05rem, min(5vw, 6vh), 3.25rem);
+      font-size: clamp(1.5rem, 5vw, 3.25rem);
       line-height: 0.9;
       letter-spacing: 0.005em;
       max-width: 20ch;
-      margin: clamp(1.1rem, 3.2vh, 2.75rem) auto 0;
+      margin: clamp(1.5rem, 4vh, 2.75rem) auto 0;
     }
 
     .since {
@@ -292,9 +198,9 @@
       font-weight: 900;
       text-transform: uppercase;
       letter-spacing: 0.14em;
-      font-size: clamp(0.68rem, min(1.8vw, 2.1vh), 0.95rem);
+      font-size: clamp(0.72rem, 1.8vw, 0.95rem);
       color: var(--dim);
-      margin: clamp(0.9rem, 2.5vh, 2rem) auto 0;
+      margin: clamp(1.25rem, 3vh, 2rem) auto 0;
       max-width: 44ch;
       line-height: 1.7;
     }
@@ -305,7 +211,7 @@
        copyright, in the site's own order and wording. */
     .footer {
       border-top: 2px solid var(--red);
-      padding: clamp(2rem, 5vh, 3.5rem) 0 clamp(2.25rem, 6vh, 4rem);
+      padding: clamp(2.5rem, 7vh, 4rem) 0 clamp(3rem, 8vh, 4.5rem);
       text-align: center;
     }
 
@@ -384,19 +290,12 @@
            read literally that is what a reader would hear instead of the
            count. The label is the number, and .count-unit supplies the
            word after it. The script keeps the label in step. -->
-      <!-- Not the h1, deliberately. The heading a crawler reads should say
-           what the page is about, and this one says "479" — the number is
-           the whole design but it is worth nothing as a heading, and it
-           changes every day. The sentence under it carries the words
-           someone would actually search for, so that is the h1, and this
-           steps down to a div. Nothing about how either one looks changes:
-           both are styled by class. -->
-      <div class="count">
-        <span class="odo" id="days" role="img" aria-label="479">479</span>
+      <h1 class="count">
+        <span class="odo" id="days" role="img" aria-label="459">459</span>
         <span class="count-unit">Days</span>
-      </div>
+      </h1>
 
-      <h1 class="statement">Since Pete Ricketts held a town hall</h1>
+      <p class="statement">Since Pete Ricketts held a town hall</p>
 
       <p class="since">
         His last in-person town hall was in Scottsbluff on
@@ -602,14 +501,7 @@
 
         // Rebuilt only when the count gains a digit — which on a page left
         // open means at a midnight, and otherwise only on the first pass.
-        if (columns !== wheels.length) {
-          build(columns);
-          // How wide the number is allowed to be depends on how many digits
-          // it has, and only the script knows that. See the note on .count:
-          // this is what keeps a four-figure count off the side of the
-          // window without anyone having to remember it.
-          document.documentElement.style.setProperty('--digits', columns);
-        }
+        if (columns !== wheels.length) build(columns);
 
         for (var i = 0; i < wheels.length; i++) {
           park(wheels[i], offsetFor(value, wheels.length - 1 - i));  // leftmost is the highest place
@@ -623,79 +515,91 @@
       }
 
       // ---- The spin-in -----------------------------------------------
-      // Slot machine. Every column spins on its own at the same flat speed,
-      // and they come to rest one at a time from the left: a column keeps
-      // spinning until the one to its left has landed, so the number arrives
-      // a digit at a time, hundreds first. Nothing is geared to anything and
-      // no column knows what the others read — the only thing passing
-      // between them is when they are allowed to stop.
+      // The only motion the odometer has, and the one place it behaves like
+      // a gear train rather than three wheels that happen to be adjacent.
       //
-      // A reel decelerates from the speed it was spinning at, so the
-      // distance that takes is fixed before we know anything else. Rather
-      // than fudge the landing to make it end on the right face, the spin is
-      // simply held on for however much further it takes to reach a point
-      // that distance short of the digit — under one extra turn, and
-      // invisible against a reel already blurred. So the deceleration is
-      // continuous out of the spin (no lurch as it starts to brake) and the
-      // reel still stops dead on its face.
+      // What is animated is the COUNT, not the wheels: one number winding up
+      // from 0 to the day count, with every wheel simply reading it at its
+      // own place — the ones wheel at c, the tens at c/10, the hundreds at
+      // c/100. The 10 : 1 : 0.1 rates are that division and nothing else, so
+      // the gearing is exact by construction at every instant, and the ones
+      // wheel turns a full revolution for each single face the tens wheel
+      // advances because that is what dividing by ten means.
+      //
+      // A wheel stops when it reaches its own digit and holds there. That is
+      // the one place this departs from a real odometer, which would keep
+      // creeping: winding to 479 the real hundreds wheel finishes at 4.79,
+      // most of the way towards 5. Here it stops on 4, because the count is
+      // shown as whole days and the wheels have to agree with it. It also
+      // gives the cascade its order — the hundreds wheel arrives at 400, the
+      // tens at 470, the ones at 479 — so they land left to right and the
+      // rightmost wheel, the one still turning through the last unit, is
+      // always the last to stop.
+      //
+      // Two speeds, split at the hundreds floor. It rips through the whole
+      // hundreds — 0 to 400 — in WIND_SECONDS, which is what makes the
+      // leftmost wheel snap into place instead of inching there, and then
+      // spends everything left over on the last two digits, easing out to a
+      // stop. So the fast phase ends exactly as the leftmost wheel lands,
+      // and the slow phase is the part anyone can actually read: the tens
+      // wheel walking up to 7 while the ones wheel rolls under it.
+      //
+      // Driven per frame rather than handed to CSS: the ones wheel travels
+      // 479 faces on a strip of 20 cells, so its position has to be taken
+      // modulo one revolution. That is free visually — the strip repeats
+      // every FACES cells, so a wrap is pixel-identical to no wrap — but it
+      // is not something a transition or a keyframe set can express, and a
+      // strip long enough to do it literally would be a 100,000px layer.
       //
       // Decoration, so anyone who has asked for less motion simply gets the
-      // number.
-      var REEL_RATE = 80;      // faces a second while spinning
-      var FIRST_STOP = 0.2;    // before the leftmost reel starts to land
-      var LAND_SECONDS = 0.5;  // for a reel to come to rest once it starts
-      var HOLD = 0.10;         // beat between one reel landing and the next braking
+      // wheels where they belong.
+      var SPIN_SECONDS = 5;   // the whole thing, both phases
+      var WIND_SECONDS = 0.8; // of that, the fast run up to the hundreds floor
 
       function spin() {
         if (!window.requestAnimationFrame) return;
 
         var value = elapsed();
         var columns = wheels.length;
-        // Eased out of, so a brake covers a third of what flat out would.
-        var brake = REEL_RATE * LAND_SECONDS / 3;
-        var reels = [];
-        var earliest = FIRST_STOP;
-        var last = 0;
 
+        // The last stretch, and where it starts. A count that is an exact
+        // hundred would otherwise leave nothing to land through, so it lands
+        // through the hundred before it instead.
+        var landing = value % 100 || 100;
+        var floor100 = value - landing;
+
+        // Nothing to wind through below 100 days: it is all landing.
+        var wind = floor100 > 0 ? Math.min(WIND_SECONDS, SPIN_SECONDS) : 0;
+        var land = SPIN_SECONDS - wind;
+
+        // Where each wheel comes to rest, in faces from where it started.
+        var stop = [];
         for (var i = 0; i < columns; i++) {
-          var digit = Math.floor(value / Math.pow(10, columns - 1 - i)) % FACES;
-          // Where this reel is standing when the spin starts. Anywhere at
-          // all, rather than a face picked out of the ten: reels that all
-          // start ON a face keep changing digit in step with each other for
-          // the whole spin, however different the faces they started on
-          // were, and three columns flicking over together read as one tall
-          // reel. Landing on a whole face is arranged below, so the start
-          // doesn't have to be one.
-          var phase = Math.random() * FACES;
-          var enter = phase + REEL_RATE * earliest;   // where the reel is when it may brake
-          // The next point at or after that which is `brake` short of the
-          // digit, so that braking from there lands on it.
-          var from = enter + (((digit - brake - enter) % FACES) + FACES) % FACES;
-          var begin = (from - phase) / REEL_RATE;
-          reels.push({ phase: phase, from: from, begin: begin });
-          last = Math.max(last, begin + LAND_SECONDS);
-          // The next reel along may not start braking until this one is down.
-          earliest = begin + LAND_SECONDS + HOLD;
+          stop.push(Math.floor(value / Math.pow(10, columns - 1 - i)));
         }
 
         var start = 0;
         requestAnimationFrame(function frame(now) {
           if (!start) start = now;
-          var t = (now - start) / 1000;
+          var ms = now - start;
+          var count;
 
-          for (var j = 0; j < columns; j++) {
-            var reel = reels[j];
-            var pos;
-            if (t <= reel.begin) {
-              pos = reel.phase + REEL_RATE * t;        // still spinning
-            } else {
-              var s = Math.min(1, (t - reel.begin) / LAND_SECONDS);
-              pos = reel.from + brake * (1 - Math.pow(1 - s, 3));
-            }
-            park(wheels[j], REST + pos % FACES);
+          if (ms < wind * 1000) {
+            count = floor100 * (ms / (wind * 1000));
+          } else {
+            var s = land > 0 ? Math.min(1, (ms - wind * 1000) / (land * 1000)) : 1;
+            count = floor100 + landing * (1 - Math.pow(1 - s, 3));  // eased to a stop
           }
 
-          if (t < last) requestAnimationFrame(frame);
+          for (var j = 0; j < columns; j++) {
+            // The wheel reads the count at its own place and holds once it
+            // has arrived. Modulo a revolution, so a wheel that has travelled
+            // hundreds of faces is still a position on a 20-cell strip.
+            var place = Math.pow(10, columns - 1 - j);
+            park(wheels[j], REST + Math.min(count / place, stop[j]) % FACES);
+          }
+
+          if (ms < SPIN_SECONDS * 1000) requestAnimationFrame(frame);
           else tick();   // land on the clock, in case a midnight passed mid-spin
         });
       }
