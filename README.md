@@ -183,11 +183,27 @@ Other notes:
 ## SEO and sharing
 
 **Nothing static carries the day count.** The script owns the clock and rewrites
-`document.title` on load, but the `<title>`, both descriptions and the share
-image are what a crawler stores and what every link preview shows, and a number
-baked into any of them is wrong by the next morning — the description read
-"459 days" for weeks while the count was past 470. All of it is written to stay
-true instead: the anchor date doesn't move, and "how long" doesn't either.
+`document.title` on load, but the `<title>`, both descriptions, the favicon and
+the share image are what a crawler stores and what every link preview shows, and
+a number baked into any of them is wrong by the next morning — the description
+read "459 days" for weeks while the count was past 470. All of it is written to
+stay true instead: the anchor date doesn't move, and neither does the question.
+
+**The question is the phrasing people type.** "How many days has it been since
+Pete Ricketts held a town hall?" is the `<title>`, and it opens the meta,
+`og:` and `twitter:` descriptions and both JSON-LD descriptions. It ranks for
+the query and stays true indefinitely, because it is a question rather than an
+answer — the answer is the first thing on the page, computed at load. It is the
+one place the wording relaxes to plain "town hall"; every sentence that makes
+the claim still says **in-person**, because Ricketts has held tele-town halls
+since. The two `image:alt` strings keep the older "how long since" phrasing, so
+the other way of asking is covered too.
+
+There is deliberately **no hidden copy and no `FAQPage` block**. Both are the
+obvious way to work more of the query onto a 25-word page and both are against
+Google's guidelines when the text isn't visible — FAQ structured data has to
+match Q&A a visitor can actually see, and text a crawler reads but a reader
+can't is cloaking. The metadata above is the honest version of the same move.
 
 - **`assets/share.png`** (1200x630) is the `og:image`, with
   `twitter:card=summary_large_image` so a shared link renders as a full-width
@@ -197,13 +213,31 @@ true instead: the anchor date doesn't move, and "how long" doesn't either.
 - **The `h1` is the sentence, not the number.** The count is a `div`. A heading
   reading `479` carries no keywords and changes daily. Both are styled by class,
   so nothing about the design moved.
+- **The favicon is a clock**, inline as an SVG data URI rather than a file, so
+  the page still opens from `file://` with nothing beside it and the browser
+  never reaches for a `/favicon.ico` that isn't there. Red field, white ring and
+  two hands at 12 and 4, drawn to survive being taken down to 16 pixels: on the
+  64-unit box the ring is a 6 stroke and the hands a 5, and there is nothing
+  else in the square. The hands are the lighter stroke on purpose — at the ring's
+  weight the wedge between them closes and the dial reads as a blob. An earlier
+  pass drew the day count into a canvas here at load instead; it was cut for the
+  clock, and the reason it had to be painted rather than shipped is the rule
+  above — a favicon is cached harder than anything else on the page.
 - `rel=canonical`, `og:url`, `og:site_name`/`locale`, image dimensions and alt,
-  `robots` with `max-image-preview:large`, `theme-color`, and a JSON-LD `WebSite`
-  block naming Osborn for Senate as publisher and Ricketts as the subject.
+  `robots` with `max-image-preview:large`, and `theme-color`.
+- **JSON-LD as an `@graph` of four nodes** — `WebSite`, `WebPage`, the `Person`
+  and the publisher `Organization` — each with an `@id` and referred to by it
+  afterwards, rather than one deeply nested `WebSite`. The site and the page are
+  different things and a search result points at the page, so both are named.
+  The part that earns its keep is `sameAs` on Ricketts: "Pete Ricketts" alone is
+  a string, while the Wikidata item (`Q6106781`, checked against the Wikipedia
+  article's own wikibase link), the Wikipedia article and the Senate office page
+  are what say *which* entity the page is about — the difference between ranking
+  for the senator and ranking for a surname.
 - `robots.txt` and `sitemap.xml` sit beside `index.html`.
 
 **The canonical host is `peterickettstownhall.com`**, inferred from the repo
-name. It appears in five places in the head plus both of those files — if the
+name. It appears throughout the head plus both of those files — if the
 production host differs, all of them are wrong, and a bad canonical is worse
 than none.
 

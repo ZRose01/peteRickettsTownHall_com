@@ -22,6 +22,16 @@ To serve it anyway (useful for cache and header behaviour):
 python3 -m http.server 8125
 ```
 
+There is no build, no lint and no test suite, so **the only verification is loading the page** —
+open `index.html` and watch the spin land, then confirm the number, `document.title` and the
+`aria-label` all agree. Note that the layout numbers in README were derived arithmetically across
+sixteen viewport sizes rather than checked in a browser; if you have a browser, that is the gap
+worth closing.
+
+Files prefixed `_` are archived snapshots, not part of the site and not linked from it:
+`_geared_odometer.html` (the earlier geared spin) and `_orig_baseline.html` (the pre-odometer map
+page, untracked). Leave them alone unless asked.
+
 `README.md` is not a stub: it carries the reasoning behind nearly every decision below, and every
 commit so far has updated it alongside the code. Read it before changing anything, and keep it in
 step.
@@ -62,6 +72,25 @@ carries the probe's line height, which differs from the cells' own pitch on the 
 the digits clipped. `.count` needs `display: flow-root`, and `.eyebrow` / `.count-unit` need their
 opaque black backgrounds: they are the drum's housing, not styling. See README for the derivation.
 
+## Degrading
+
+The count has to survive script failure, a hostile face, a screen reader and a reduced-motion
+setting, and each path is arranged rather than incidental:
+
+- The markup ships the plain number (`479`) as a single flex item, positioned exactly where the
+  odometer lands, so a script that never runs leaves the count readable. `tick()` returns early on a
+  non-positive or `NaN` value, which leaves that text standing rather than replacing it with a
+  wrong number.
+- `#days` is `role="img"` with an `aria-label` the script keeps in step. Without it a reader
+  announces the strips — `0123456789` twice per column. Don't remove the role to "fix" semantics.
+- `prefers-reduced-motion: reduce` and any browser without `requestAnimationFrame` skip `spin()`
+  entirely and get the wheels parked where they belong.
+- `document.fonts.ready` re-measures the drum and re-parks; on this domain the Typekit isn't served
+  and nothing comes of it, but on osbornforsenate.com it is the only pass that sees the real face.
+- The clock is re-read by a 30s `setInterval` (which bounds how long an open page sits on
+  yesterday's number) plus a `visibilitychange` handler, because a backgrounded tab has its timers
+  throttled to a crawl.
+
 ## Layout
 
 Nothing on the page needs a resize listener — the odometer's drum is measured entirely in `em`, so
@@ -82,12 +111,29 @@ face.
 
 ## SEO
 
-**Never put the day count in anything static** — `<title>`, the descriptions, or `assets/share.png`.
-The script rewrites `document.title` at load; everything static is written to stay true without a
-number (the description sat at "459 days" for weeks). The `h1` is the sentence, not the number —
-the count is a `div`, since a heading of `479` has no keywords and changes daily. The canonical host
-`peterickettstownhall.com` is **inferred from the repo name** and appears in the head plus
-`robots.txt` and `sitemap.xml`; confirm it before trusting it.
+**Never put the day count in anything static** — `<title>`, the descriptions, `assets/share.png` or
+the favicon. The script rewrites `document.title` at load; everything static is written to stay true
+without a number (the description sat at "459 days" for weeks). The `h1` is the sentence, not the
+number — the count is a `div`, since a heading of `479` has no keywords and changes daily. The
+canonical host `peterickettstownhall.com` is **inferred from the repo name** and appears in the head
+plus `robots.txt` and `sitemap.xml`; confirm it before trusting it.
+
+The `<title>` and every description lead with the question people actually type — "How many days has
+it been since Pete Ricketts held a town hall?" A question ranks for the query and is still true
+tomorrow, which an answer wouldn't be. That title is the only place the wording relaxes to plain
+"town hall"; every sentence that makes the claim still says **in-person**. Keep it that way, and
+don't reach for hidden copy or an `FAQPage` block to get more of the query onto the page — both need
+the text to be visible to a reader, and this page has no such section.
+
+The JSON-LD is an `@graph` of four nodes (`WebSite`, `WebPage`, `Person`, `Organization`) wired by
+`@id`. `sameAs` on Ricketts — Wikidata `Q6106781`, Wikipedia, his Senate page — is the load-bearing
+part; it's what identifies the entity rather than the string.
+
+The favicon is a **static inline SVG clock** (red field, white ring, hands at 12 and 4), tuned to
+read at 16px: ring stroke 6, hand stroke 5 on a 64 box, nothing else in the square. It is a data URI
+rather than a file so the page still opens from `file://`. A previous pass painted the day count
+into it from a canvas at load; that is gone, along with `paint()` and its `FAVICON` config — don't
+put a number back on it.
 
 ## Footer
 

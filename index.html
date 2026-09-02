@@ -3,25 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>How long has it been since Pete Ricketts held a town hall?</title>
+  <title>How many days has it been since Pete Ricketts held a town hall?</title>
 
   <!-- Nothing in the head carries the day count. The script has the clock
        and rewrites document.title on load, but this is what a crawler
        stores and what every link preview shows, and a number baked in here
        is wrong by the next morning — it read 459 for weeks while the count
        was past 470. Everything static is written to stay true: the anchor
-       date doesn't move, and "how long" doesn't either. -->
-  <meta name="description" content="Senator Pete Ricketts has not held an in-person town hall in Nebraska since April 25, 2025, in Scottsbluff. This page counts the days since, and keeps counting.">
+       date doesn't move, and neither does the question.
+
+       The question is the phrasing people actually type — "how many days
+       since Pete Ricketts held a town hall" — so it leads the title and
+       every description, and the page answers it in the first thing you
+       see. It is a question rather than a count, which is what lets it sit
+       in a cached <title> and still be true tomorrow. Note that it is the
+       only place the wording relaxes: everywhere the page makes the claim
+       it says in-person, because Ricketts has held tele-town halls since. -->
+  <meta name="description" content="How many days has it been since Pete Ricketts held a town hall? He has not held an in-person town hall in Nebraska since April 25, 2025, in Scottsbluff.">
 
   <link rel="canonical" href="https://peterickettstownhall.com/">
 
-  <meta property="og:title" content="How long has it been since Pete Ricketts held a town hall?">
-  <meta property="og:description" content="Senator Pete Ricketts has not held an in-person town hall in Nebraska since April 25, 2025, in Scottsbluff. This page counts the days since, and keeps counting.">
+  <meta property="og:title" content="How many days has it been since Pete Ricketts held a town hall?">
+  <meta property="og:description" content="How many days has it been since Pete Ricketts held a town hall? He has not held an in-person town hall in Nebraska since April 25, 2025, in Scottsbluff.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://peterickettstownhall.com/">
   <meta property="og:site_name" content="peteRickettsTownHall.com">
   <meta property="og:locale" content="en_US">
   <meta property="og:image" content="https://peterickettstownhall.com/assets/share.png">
+  <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="How long since Pete Ricketts held an in-person town hall?">
@@ -29,39 +38,115 @@
   <!-- summary_large_image is what turns a shared link into the full-width
        card rather than a thumbnail beside the text. -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="How long has it been since Pete Ricketts held a town hall?">
-  <meta name="twitter:description" content="Senator Pete Ricketts has not held an in-person town hall in Nebraska since April 25, 2025, in Scottsbluff. This page counts the days since, and keeps counting.">
+  <meta name="twitter:title" content="How many days has it been since Pete Ricketts held a town hall?">
+  <meta name="twitter:description" content="How many days has it been since Pete Ricketts held a town hall? He has not held an in-person town hall in Nebraska since April 25, 2025, in Scottsbluff.">
   <meta name="twitter:image" content="https://peterickettstownhall.com/assets/share.png">
   <meta name="twitter:image:alt" content="How long since Pete Ricketts held an in-person town hall?">
 
   <meta name="robots" content="index, follow, max-image-preview:large">
   <meta name="theme-color" content="#000000">
 
+  <!-- A clock, because the page is a stopwatch. Red field with a white
+       ring and two hands, drawn to be read at 16 pixels: on a 64 box the
+       ring is a 6-unit stroke and the hands a 5, set at 12 and 4, and
+       there is nothing else in the square — no tick marks, no numerals,
+       nothing that turns to mush at that size. The hands are a lighter
+       stroke than the ring on purpose: at the same weight the wedge
+       between them closes up and the dial reads as a solid blob.
+
+       Red rather than the page's black, because a favicon sits on the
+       browser's own tab strip and a black square is invisible on a dark
+       one. The red is the accent already on the page.
+
+       Static, and inline as a data URI rather than a file: the page is
+       meant to open from file:// with nothing beside it, and this also
+       stops the browser reaching for a /favicon.ico that isn't there. An
+       earlier version drew the day count here at load, which is why the
+       icon had to be painted rather than shipped — a favicon is cached
+       harder than anything else on a page, so a number on it would have
+       been a day stale by morning. A clock doesn't move, so it ships. -->
+  <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23b81f2e'/%3E%3Ccircle cx='32' cy='32' r='22' fill='none' stroke='%23ffffff' stroke-width='6'/%3E%3Cg stroke='%23ffffff' stroke-width='5' stroke-linecap='round'%3E%3Cpath d='M32 32V17'/%3E%3Cpath d='M32 32l8 4'/%3E%3C/g%3E%3C/svg%3E">
+
   <!-- The one fact the page rests on, in a form a machine can read. Kept
        to what the page actually asserts and can stand behind: the date, the
-       place, and that the count is measured from it. -->
+       place, and that the count is measured from it.
+
+       Written as an @graph of four nodes with @ids rather than one nested
+       WebSite, so each thing is named once and referred to afterwards, and
+       so the page itself is a node — the WebSite is the site, the WebPage
+       is what a search result actually points at.
+
+       `sameAs` on Ricketts is the part that earns its keep. "Pete Ricketts"
+       on its own is a string; the Wikidata item, the Wikipedia article and
+       the Senate office page are what tell a search engine which entity
+       this page is about, which is the difference between ranking for the
+       senator and ranking for a surname. Q6106781 is his item — checked
+       against the Wikipedia article's own wikibase link, not guessed.
+
+       Nothing here carries the day count, for the same reason nothing else
+       in the head does. -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "peteRickettsTownHall.com",
-    "url": "https://peterickettstownhall.com/",
-    "inLanguage": "en-US",
-    "description": "A running count of the days since Senator Pete Ricketts last held an in-person town hall in Nebraska.",
-    "publisher": {
-      "@type": "Organization",
-      "name": "Osborn for Senate",
-      "url": "https://osbornforsenate.com"
-    },
-    "about": {
-      "@type": "Person",
-      "name": "Pete Ricketts",
-      "jobTitle": "United States Senator",
-      "affiliation": {
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://peterickettstownhall.com/#website",
+        "name": "peteRickettsTownHall.com",
+        "url": "https://peterickettstownhall.com/",
+        "inLanguage": "en-US",
+        "description": "How many days has it been since Pete Ricketts held a town hall? A running count of the days since Senator Pete Ricketts last held an in-person town hall in Nebraska.",
+        "publisher": { "@id": "https://osbornforsenate.com/#organization" }
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://peterickettstownhall.com/#webpage",
+        "url": "https://peterickettstownhall.com/",
+        "name": "How many days has it been since Pete Ricketts held a town hall?",
+        "description": "How many days has it been since Pete Ricketts held a town hall? He has not held an in-person town hall in Nebraska since April 25, 2025, in Scottsbluff.",
+        "inLanguage": "en-US",
+        "isPartOf": { "@id": "https://peterickettstownhall.com/#website" },
+        "about": { "@id": "https://www.wikidata.org/wiki/Q6106781" },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://peterickettstownhall.com/assets/share.png",
+          "width": 1200,
+          "height": 630
+        }
+      },
+      {
+        "@type": "Person",
+        "@id": "https://www.wikidata.org/wiki/Q6106781",
+        "name": "Pete Ricketts",
+        "givenName": "Pete",
+        "familyName": "Ricketts",
+        "jobTitle": "United States Senator",
+        "description": "United States Senator for Nebraska",
+        "url": "https://www.ricketts.senate.gov/",
+        "sameAs": [
+          "https://en.wikipedia.org/wiki/Pete_Ricketts",
+          "https://www.wikidata.org/wiki/Q6106781",
+          "https://www.ricketts.senate.gov/"
+        ],
+        "affiliation": {
+          "@type": "GovernmentOrganization",
+          "name": "United States Senate",
+          "sameAs": "https://en.wikipedia.org/wiki/United_States_Senate"
+        },
+        "workLocation": {
+          "@type": "AdministrativeArea",
+          "name": "Nebraska",
+          "sameAs": "https://en.wikipedia.org/wiki/Nebraska"
+        }
+      },
+      {
         "@type": "Organization",
-        "name": "United States Senate"
+        "@id": "https://osbornforsenate.com/#organization",
+        "name": "Osborn for Senate",
+        "url": "https://osbornforsenate.com"
       }
-    }
+    ]
   }
   </script>
 
